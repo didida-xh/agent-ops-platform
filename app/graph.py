@@ -8,11 +8,15 @@ from time import perf_counter
 from typing import Annotated, Optional, TypedDict
 from uuid import uuid4
 
+import psycopg
 from langchain_core.messages import AnyMessage, SystemMessage, ToolMessage
+from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.graph import START, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import tools_condition
+from psycopg.rows import dict_row
 
+from app.config import PG_DSN
 from app.db import connect, ensure_schema
 from app.events import ensure_session, log_event
 from app.llm import llm
@@ -31,6 +35,17 @@ llm_with_tools=llm.bind_tools(TOOLS)
 
 MAX_TOOL_SECONDS = 12
 _executor = ThreadPoolExecutor(max_workers=4)
+_checkpointer = None
+
+
+def _get_checkpointer():
+    global _checkpointer
+    if _checkpointer is None:
+        conn = psycopg.connect(PG_DSN, autocommit=True, row_factory=dict_row)
+        saver = PostgresSaver(conn)
+        saver.setup()
+        _checkpointer = saver
+    return _checkpointer
 
 
 def _sig(call):
@@ -146,7 +161,7 @@ def build_graph(conn,session_id:str):
     builder.add_edge(START,"agent")
     builder.add_conditional_edges("agent",tools_condition)
     builder.add_edge("tools","agent")
-    return builder.compile()
+    return builder.compile(checkpointer=_get_checkpointer())
 
 def run_agent(user_input:str,session_id:Optional[str]=None):
     sid = session_id or "s" + uuid4().hex[:8]
@@ -159,7 +174,7 @@ def run_agent(user_input:str,session_id:Optional[str]=None):
         graph=build_graph(conn,sid)
         result = graph.invoke(
             {"messages": [("user", user_input)], "session_id": sid},
-            config={"recursion_limit": 20},
+            config={"recursion_limit": 20, "configurable": {"thread_id": sid}}
         )
         return sid, result["messages"][-1].content
     except Exception as exc:
