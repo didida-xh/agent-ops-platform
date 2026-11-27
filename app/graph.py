@@ -2,6 +2,8 @@
 """
 
 import json
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FuturesTimeout
 from time import perf_counter
 from typing import Annotated, Optional, TypedDict
 from uuid import uuid4
@@ -26,6 +28,26 @@ SYSTEM_PROMPT = """你是一个会使用工具的助手。
 """
 
 llm_with_tools=llm.bind_tools(TOOLS)
+
+MAX_TOOL_SECONDS = 12
+_executor = ThreadPoolExecutor(max_workers=4)
+
+
+def _sig(call):
+    return "%s:%s" % (
+        call["name"],
+        json.dumps(call.get("args") or {}, sort_keys=True, ensure_ascii=False),
+    )
+
+
+def _repeated_signatures(messages):
+    ai_messages = [m for m in messages if getattr(m, "tool_calls", None)]
+    if len(ai_messages) < 2:
+        return set()
+    prev = {_sig(c) for c in ai_messages[-2].tool_calls}
+    cur = {_sig(c) for c in ai_messages[-1].tool_calls}
+    return cur & prev
+
 
 class State(TypedDict):
     messages:Annotated[list[AnyMessage],add_messages]
@@ -52,17 +74,45 @@ def build_graph(conn,session_id:str):
 
     def tools_node(state:State):
         last=state["messages"][-1]
+        repeated = _repeated_signatures(state["messages"])
         results=[]
         for call in last.tool_calls:
             name=call["name"]
             args=call.get("args") or {}
             log_event(conn,session_id,"tool_call","agent",tool=name,args=args)
             started=perf_counter()
+
+            if _sig(call) in repeated:
+                content = json.dumps(
+                    {"error": "检测到重复调用，已跳过执行。请更换参数或直接回答。"},
+                    ensure_ascii=False,
+                )
+                log_event(
+                    conn, session_id, "tool_result", "tool", tool=name,
+                    error="duplicate_call",
+                    latency_ms=0,
+                )
+                results.append(ToolMessage(content=content, tool_call_id=call["id"]))
+                continue
+
             try:
                 tool_fn=TOOL_REGISTRY.get(name)
                 if tool_fn is None:
                     raise KeyError("未知工具：%s" %name)
-                content=tool_fn.invoke(args)
+                content = None
+                last_exc = None
+                for attempt in range(2):
+                    try:
+                        future = _executor.submit(tool_fn.invoke, args)
+                        content = future.result(timeout=MAX_TOOL_SECONDS)
+                        break
+                    except FuturesTimeout:
+                        future.cancel()
+                        last_exc = TimeoutError("工具执行超过 %ss" % MAX_TOOL_SECONDS)
+                    except (ConnectionError, OSError) as exc:
+                        last_exc = exc
+                if content is None:
+                    raise last_exc or TimeoutError("工具执行失败")
                 tool_error = None
                 try:
                     payload = json.loads(content) if isinstance(content, str) else None

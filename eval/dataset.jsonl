@@ -1,0 +1,50 @@
+{"id": "e01", "level": "easy", "query": "帮我算一下 (23*4+10)/2", "expected_tools": ["calculate"], "judge": {"type": "number", "value": 51, "tolerance": 0.01}}
+{"id": "e02", "level": "easy", "query": "北京现在天气怎么样？", "expected_tools": ["get_weather"], "judge": {"type": "contains", "keywords": ["北京"]}}
+{"id": "e03", "level": "easy", "query": "ReAct 循环的核心步骤是什么？", "expected_tools": ["search_knowledge_base"], "judge": {"type": "contains", "keywords": ["ReAct"]}}
+{"id": "e04", "level": "easy", "query": "你好，请用一句话介绍你自己。", "expected_tools": [], "judge": {"type": "toolchain", "expected": []}}
+{"id": "m01", "level": "medium", "query": "一个长方形长 12.5 米、宽 8 米，面积多少？如果每平方米铺 3.2 元的地毯，总价多少？", "expected_tools": ["calculate"], "judge": {"type": "number", "value": 320, "tolerance": 0.01}}
+{"id": "m02", "level": "medium", "query": "查一下 Atlantisxyz 的天气", "expected_tools": ["get_weather"], "judge": {"type": "contains", "keywords": ["没有找到"]}}
+{"id": "m03", "level": "medium", "query": "根据知识库解释一下 RAG，另外用计算工具算 3 的 5 次方。", "expected_tools": ["search_knowledge_base", "calculate"], "judge": {"type": "all", "rules": [{"type": "number", "value": 243, "tolerance": 0.01}, {"type": "contains", "keywords": ["检索增强生成"]}]}}
+{"id": "m04", "level": "medium", "query": "帮我算 0.1 + 0.2 的结果", "expected_tools": ["calculate"], "judge": {"type": "number", "value": 0.3, "tolerance": 0.001}}
+{"id": "h01", "level": "hard", "query": "杭州现在气温多少？换算成华氏度，并说明 ReAct 中拿到工具结果后模型如何继续。", "expected_tools": ["get_weather", "calculate", "search_knowledge_base"], "judge": {"type": "contains", "keywords": ["华氏", "ReAct"]}}
+{"id": "h02", "level": "hard", "query": "37 摄氏度已经超过 35 度，请换算成华氏度；没超过就只回答“未超过”。", "expected_tools": ["calculate"], "judge": {"type": "number", "value": 98.6, "tolerance": 0.05}}
+{"id": "e05", "level": "easy", "query": "计算 (100-37)*3", "expected_tools": ["calculate"], "judge": {"type": "number", "value": 189, "tolerance": 0.01}}
+{"id": "e06", "level": "easy", "query": "计算 12*12", "expected_tools": ["calculate"], "judge": {"type": "number", "value": 144, "tolerance": 0.01}}
+{"id": "e07", "level": "easy", "query": "计算 365/5", "expected_tools": ["calculate"], "judge": {"type": "number", "value": 73, "tolerance": 0.01}}
+{"id": "e08", "level": "easy", "query": "计算 (8+7)*6/3", "expected_tools": ["calculate"], "judge": {"type": "number", "value": 30, "tolerance": 0.01}}
+{"id": "e09", "level": "easy", "query": "上海现在天气怎么样？", "expected_tools": ["get_weather"], "judge": {"type": "contains", "keywords": ["上海"]}}
+{"id": "e10", "level": "easy", "query": "广州现在天气怎么样？", "expected_tools": ["get_weather"], "judge": {"type": "contains", "keywords": ["广州"]}}
+{"id": "e11", "level": "easy", "query": "智能体是什么？请结合知识库回答。", "expected_tools": ["search_knowledge_base"], "judge": {"type": "contains", "keywords": ["智能体"]}}
+{"id": "e12", "level": "easy", "query": "今天心情不太好，陪我聊两句吧。", "expected_tools": [], "judge": {"type": "toolchain", "expected": []}}
+{"id": "e13", "level": "easy", "query": "谢谢，不用再查了。", "expected_tools": [], "judge": {"type": "toolchain", "expected": []}}
+{"id": "e14", "level": "easy", "query": "计算 0.5*8", "expected_tools": ["calculate"], "judge": {"type": "number", "value": 4, "tolerance": 0.01}}
+{"id": "e15", "level": "easy", "query": "计算 99-45+6", "expected_tools": ["calculate"], "judge": {"type": "number", "value": 60, "tolerance": 0.01}}
+{"id": "e21", "level": "easy", "query": "知识库里智能体的规划能力包括哪些？", "expected_tools": ["search_knowledge_base"], "judge": {"type": "contains", "keywords": ["规划"]}}
+{"id": "e17", "level": "easy", "query": "计算 (7+3)*(9-4)", "expected_tools": ["calculate"], "judge": {"type": "number", "value": 50, "tolerance": 0.01}}
+{"id": "e18", "level": "easy", "query": "计算 1000/8/5", "expected_tools": ["calculate"], "judge": {"type": "number", "value": 25, "tolerance": 0.01}}
+{"id": "e19", "level": "easy", "query": "用一句话说明什么是工具调用。", "expected_tools": [], "judge": {"type": "contains", "keywords": ["工具"]}}
+{"id": "e20", "level": "easy", "query": "计算 17*6-12", "expected_tools": ["calculate"], "judge": {"type": "number", "value": 90, "tolerance": 0.01}}
+{"id": "m05", "level": "medium", "query": "一个长方形长 7.5 米、宽 4 米，面积多少？每平方米 12 元，总价多少？", "expected_tools": ["calculate"], "judge": {"type": "number", "value": 360, "tolerance": 0.01}}
+{"id": "m06", "level": "medium", "query": "先算 45*3，再减去 15。", "expected_tools": ["calculate"], "judge": {"type": "number", "value": 120, "tolerance": 0.01}}
+{"id": "m07", "level": "medium", "query": "杭州现在气温多少？换算成华氏度。", "expected_tools": ["get_weather", "calculate"], "judge": {"type": "contains", "keywords": ["华氏"]}}
+{"id": "m08", "level": "medium", "query": "把 98.6 华氏度换算成摄氏度，公式是 (F-32)*5/9。", "expected_tools": ["calculate"], "judge": {"type": "number", "value": 37, "tolerance": 0.05}}
+{"id": "m09", "level": "medium", "query": "12、18、27 的平均值是多少？", "expected_tools": ["calculate"], "judge": {"type": "number", "value": 19, "tolerance": 0.01}}
+{"id": "m10", "level": "medium", "query": "原价 250 元，打 8 折后再减 30 元，实付多少？", "expected_tools": ["calculate"], "judge": {"type": "number", "value": 170, "tolerance": 0.01}}
+{"id": "m11", "level": "medium", "query": "商品 480 元，税率 6%，含税总价多少？", "expected_tools": ["calculate"], "judge": {"type": "number", "value": 508.8, "tolerance": 0.01}}
+{"id": "m12", "level": "medium", "query": "100 美元按 7.2 的汇率换成人民币是多少？", "expected_tools": ["calculate"], "judge": {"type": "number", "value": 720, "tolerance": 0.01}}
+{"id": "m13", "level": "medium", "query": "知识库里智能体有哪些记忆类型？再用计算工具算 6*7。", "expected_tools": ["search_knowledge_base", "calculate"], "judge": {"type": "all", "rules": [{"type": "number", "value": 42, "tolerance": 0.01}, {"type": "contains", "keywords": ["记忆"]}]}}
+{"id": "m14", "level": "medium", "query": "查一下 Zzzcity 的天气", "expected_tools": ["get_weather"], "judge": {"type": "contains", "keywords": ["没有找到"]}}
+{"id": "m15", "level": "medium", "query": "如果 12*12 大于 140，输出差值；否则输出和。", "expected_tools": ["calculate"], "judge": {"type": "number", "value": 4, "tolerance": 0.01}}
+{"id": "m16", "level": "medium", "query": "不要调用任何工具，直接告诉我 2+2 等于几。", "expected_tools": [], "judge": {"type": "toolchain", "expected": []}}
+{"id": "m17", "level": "medium", "query": "一件商品 89.9 元，买 3 件，满 200 减 20，实付多少？", "expected_tools": ["calculate"], "judge": {"type": "number", "value": 249.7, "tolerance": 0.01}}
+{"id": "m18", "level": "medium", "query": "150 的 18% 是多少？", "expected_tools": ["calculate"], "judge": {"type": "number", "value": 27, "tolerance": 0.01}}
+{"id": "m19", "level": "medium", "query": "从 9:45 到 13:20 一共多少分钟？", "expected_tools": ["calculate"], "judge": {"type": "number", "value": 215, "tolerance": 0.01}}
+{"id": "m20", "level": "medium", "query": "知识库里的 ReAct 是什么？再用计算工具算 240 的 15%。", "expected_tools": ["search_knowledge_base", "calculate"], "judge": {"type": "all", "rules": [{"type": "number", "value": 36, "tolerance": 0.01}, {"type": "contains", "keywords": ["ReAct"]}]}}
+{"id": "h03", "level": "hard", "query": "北京和上海现在哪个更冷？两地气温差多少摄氏度？", "expected_tools": ["get_weather", "get_weather", "calculate"], "judge": {"type": "contains", "keywords": ["北京", "上海"]}}
+{"id": "h04", "level": "hard", "query": "帮我查一下天气。", "expected_tools": [], "judge": {"type": "all", "rules": [{"type": "toolchain", "expected": []}, {"type": "contains", "keywords": ["城市"]}]}}
+{"id": "h05", "level": "hard", "query": "我们公司 2025 年的营业收入是多少？", "expected_tools": [], "judge": {"type": "contains", "keywords": ["无法"]}}
+{"id": "h06", "level": "hard", "query": "用连乘计算 1.05 的 3 次方，并说明知识库里智能体的规划能力包括什么。", "expected_tools": ["search_knowledge_base", "calculate"], "judge": {"type": "all", "rules": [{"type": "number", "value": 1.157625, "tolerance": 0.0001}, {"type": "contains", "keywords": ["规划"]}]}}
+{"id": "h07", "level": "hard", "query": "半径 5 的圆，面积按 π=3.14 计算，再把面积乘以 2。", "expected_tools": ["calculate"], "judge": {"type": "number", "value": 157, "tolerance": 0.01}}
+{"id": "h08", "level": "hard", "query": "查一下 Atlantisxyz 的天气；如果查不到，就改为计算 12*12 并把结果告诉我。", "expected_tools": ["get_weather", "calculate"], "judge": {"type": "all", "rules": [{"type": "number", "value": 144, "tolerance": 0.01}, {"type": "contains", "keywords": ["Atlantisxyz"]}]}}
+{"id": "h09", "level": "hard", "query": "37 摄氏度换算成华氏度，并把结果四舍五入到整数。", "expected_tools": ["calculate"], "judge": {"type": "number", "value": 99, "tolerance": 0.01}}
+{"id": "h10", "level": "hard", "query": "三件商品分别是 12.5 元、8.8 元、19.9 元，各买两套，总价多少？", "expected_tools": ["calculate"], "judge": {"type": "number", "value": 82.4, "tolerance": 0.01}}
