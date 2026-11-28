@@ -3,8 +3,10 @@
 """
 
 import argparse
+import json
+import sys
 
-from app.graph import run_agent
+from app.graph import get_pending, run_agent
 
 DEMO_QUERIES = [
     "北京今天天气怎么样？需要带伞吗？",
@@ -32,6 +34,13 @@ def main():
         session_id, answer = run_agent(query, args.session)
         print("\n[session] %s" % session_id)
         print("[Q] %s" % query)
+
+        pending = get_pending(session_id)
+        if pending is not None:
+            print("[待审批] %s" % json.dumps(pending, ensure_ascii=False))
+            print("请执行: python -m app.approve --session %s --approve" % session_id)
+            sys.exit(2)
+
         print("[A] %s" % answer)
 
 if __name__ == "__main__":

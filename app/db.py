@@ -6,7 +6,8 @@ def connect():
     return psycopg.connect(PG_DSN, autocommit=False)
 
 def ensure_schema(conn):
-    sql = (SQL_DIR / "001_init.sql").read_text(encoding="utf-8")
-    with conn.cursor() as cur:
-        cur.execute(sql)
+    for path in sorted(SQL_DIR.glob("*.sql")):
+        sql = path.read_text(encoding="utf-8")
+        with conn.cursor() as cur:
+            cur.execute(sql)
     conn.commit()

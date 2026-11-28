@@ -7,3 +7,5 @@ __pycache__/
 reference/
 reports/
 *.log
+
+workspace/

@@ -14,13 +14,15 @@ from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.graph import START, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import tools_condition
+from langgraph.types import interrupt
 from psycopg.rows import dict_row
+from psycopg.types.json import Jsonb
 
 from app.config import PG_DSN
 from app.db import connect, ensure_schema
 from app.events import ensure_session, log_event
 from app.llm import llm
-from app.tools import TOOLS, TOOL_REGISTRY
+from app.tools import HIGH_RISK_TOOLS, TOOLS, TOOL_REGISTRY
 
 SYSTEM_PROMPT = """你是一个会使用工具的助手。                                 
 规则：                                                              
@@ -28,7 +30,8 @@ SYSTEM_PROMPT = """你是一个会使用工具的助手。
 2. 涉及数字计算必须调用 calculate，不要心算；                                    
 3. 涉及 ReAct、RAG、智能体、工具调用等概念时，调用 search_knowledge_base；           
 4. 工具返回 error 时，先根据错误信息修正参数再试；                                   
-5. 资料不足时直接说明，不要编造。                                               
+5. 需要写文件时调用 write_file，路径只能是 workspace 内的相对路径；
+6. 资料不足时直接说明，不要编造。                                               
 """
 
 llm_with_tools=llm.bind_tools(TOOLS)
@@ -64,6 +67,18 @@ def _repeated_signatures(messages):
     return cur & prev
 
 
+def _record_approval(conn, session_id, tool, args, decision, note):
+    with conn.transaction():
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO approvals (session_id, tool, args, decision, note)
+                VALUES (%s, %s, %s, %s, %s)
+                """,
+                (session_id, tool, Jsonb(args), decision, note),
+            )
+
+
 class State(TypedDict):
     messages:Annotated[list[AnyMessage],add_messages]
     session_id:str
@@ -90,14 +105,18 @@ def build_graph(conn,session_id:str):
     def tools_node(state:State):
         last=state["messages"][-1]
         repeated = _repeated_signatures(state["messages"])
+        executed = {
+            m.tool_call_id for m in state["messages"] if isinstance(m, ToolMessage)
+        }
         results=[]
         for call in last.tool_calls:
+            if call["id"] in executed:
+                continue
             name=call["name"]
             args=call.get("args") or {}
-            log_event(conn,session_id,"tool_call","agent",tool=name,args=args)
-            started=perf_counter()
 
             if _sig(call) in repeated:
+                log_event(conn,session_id,"tool_call","agent",tool=name,args=args)
                 content = json.dumps(
                     {"error": "检测到重复调用，已跳过执行。请更换参数或直接回答。"},
                     ensure_ascii=False,
@@ -110,6 +129,37 @@ def build_graph(conn,session_id:str):
                 results.append(ToolMessage(content=content, tool_call_id=call["id"]))
                 continue
 
+            if name in HIGH_RISK_TOOLS:
+                decision = interrupt({
+                    "session_id": session_id,
+                    "tool": name,
+                    "args": args,
+                })
+                approved = isinstance(decision, dict) and decision.get("decision") == "approved"
+                note = decision.get("note") if isinstance(decision, dict) else None
+                verdict = "approved" if approved else "rejected"
+                log_event(conn,session_id,"tool_call","agent",tool=name,args=args)
+                log_event(
+                    conn, session_id, "approval", "user", tool=name,
+                    result={"decision": verdict, "note": note},
+                )
+                _record_approval(conn, session_id, name, args, verdict, note)
+                if not approved:
+                    content = json.dumps(
+                        {"error": "user_rejected: 用户拒绝执行该工具"},
+                        ensure_ascii=False,
+                    )
+                    log_event(
+                        conn, session_id, "tool_result", "tool", tool=name,
+                        error="user_rejected",
+                        latency_ms=0,
+                    )
+                    results.append(ToolMessage(content=content, tool_call_id=call["id"]))
+                    continue
+            else:
+                log_event(conn,session_id,"tool_call","agent",tool=name,args=args)
+
+            started=perf_counter()
             try:
                 tool_fn=TOOL_REGISTRY.get(name)
                 if tool_fn is None:
@@ -186,6 +236,16 @@ def run_agent(user_input:str,session_id:Optional[str]=None):
         raise
     finally:
         conn.close()
+
+
+def get_pending(session_id: str):
+    """返回挂起中的审批载荷，没有则返回 None。"""
+    graph = build_graph(None, session_id)
+    snapshot = graph.get_state({"configurable": {"thread_id": session_id}})
+    for task in snapshot.tasks:
+        for item in getattr(task, "interrupts", ()):
+            return item.value
+    return None
 
 
 
